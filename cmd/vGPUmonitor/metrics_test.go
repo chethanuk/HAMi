@@ -63,7 +63,7 @@ func TestDescribeCollectSync(t *testing.T) {
 		PodLister:       podLister,
 		containerLister: &nvidia.ContainerLister{},
 	}
-	initLegacyDescriptors()
+	enableLegacyDescriptors(t)
 	ccLegacy := ClusterManagerCollector{ClusterManager: cLegacy}
 	if err := regLegacy.Register(ccLegacy); err != nil {
 		t.Fatalf("Failed to register ClusterManagerCollector (legacy): %v", err)
@@ -256,7 +256,7 @@ func descHasLabel(desc *prometheus.Desc, label string) bool {
 // descriptors declare the node label expected by per-node aggregation
 // (current descriptors use "node", legacy ones use "nodeid").
 func TestHostGPUMetricsDescriptorsIncludeNodeLabel(t *testing.T) {
-	initLegacyDescriptors()
+	enableLegacyDescriptors(t)
 
 	if !descHasLabel(hostGPUdesc, "node") {
 		t.Errorf("hostGPUdesc does not contain 'node' label: %s", hostGPUdesc.String())
@@ -372,7 +372,7 @@ func TestHostGPUMetricsCollectionSuccess(t *testing.T) {
 		},
 	}
 
-	initLegacyDescriptors()
+	enableLegacyDescriptors(t)
 	cc := ClusterManagerCollector{
 		ClusterManager: &ClusterManager{LegacyMetrics: true},
 	}
@@ -608,4 +608,15 @@ func TestResolveGPUDeviceIdentityDoesNotDoublePrefixModel(t *testing.T) {
 	if identity.deviceName != "NVIDIA A100-SXM4-40GB" {
 		t.Errorf("deviceName = %q, want %q", identity.deviceName, "NVIDIA A100-SXM4-40GB")
 	}
+}
+
+// enableLegacyDescriptors turns the legacy descriptors on for one test and
+// restores the previous (normally nil) values afterwards.
+func enableLegacyDescriptors(t *testing.T) {
+	t.Helper()
+	saved := [...]*prometheus.Desc{legacyHostGPUdesc, legacyHostGPUUtilizationdesc, legacyCtrvGPUdesc, legacyCtrvGPUlimitdesc, legacyCtrDeviceMemorydesc, legacyCtrDeviceUtilizationdesc, legacyCtrDeviceLastKernelDesc, legacyCtrDeviceMigInfo}
+	t.Cleanup(func() {
+		legacyHostGPUdesc, legacyHostGPUUtilizationdesc, legacyCtrvGPUdesc, legacyCtrvGPUlimitdesc, legacyCtrDeviceMemorydesc, legacyCtrDeviceUtilizationdesc, legacyCtrDeviceLastKernelDesc, legacyCtrDeviceMigInfo = saved[0], saved[1], saved[2], saved[3], saved[4], saved[5], saved[6], saved[7]
+	})
+	initLegacyDescriptors()
 }
