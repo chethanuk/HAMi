@@ -448,6 +448,7 @@ func TestDelQuotaNonLimitsKey(t *testing.T) {
 		},
 	}
 	qm.AddQuota(rq)
+	t.Cleanup(func() { qm.DelQuota(rq) })
 
 	// Quota with non-limits keys (including 7-character prefix key).
 	unrelatedQuota := &corev1.ResourceQuota{
