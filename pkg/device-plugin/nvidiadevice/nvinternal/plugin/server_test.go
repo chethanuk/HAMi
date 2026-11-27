@@ -515,6 +515,8 @@ func Test_pathGeneration(t *testing.T) {
 
 func Test_configOverride(t *testing.T) {
 	t.Setenv("NODE_NAME", "testnode")
+	previousPreferred := enableGetPreferredAllocation
+	t.Cleanup(func() { enableGetPreferredAllocation = previousPreferred })
 	logLevel1 := nvidia.Debugs
 	logLevel2 := nvidia.Infos
 	split1 := uint(2)
@@ -1184,6 +1186,11 @@ func TestAllocatePreservesContainerOrderWhenOneContainerFallsBack(t *testing.T) 
 	previousPodAllocationTrySuccess := podAllocationTrySuccess
 	podAllocationTrySuccess = func(string, string, string, *corev1.Pod) {}
 	defer func() { podAllocationTrySuccess = previousPodAllocationTrySuccess }()
+
+	// The kubelet-ID mapping under test only runs with preferred allocation on.
+	previousPreferred := enableGetPreferredAllocation
+	enableGetPreferredAllocation = true
+	defer func() { enableGetPreferredAllocation = previousPreferred }()
 
 	request := &kubeletdevicepluginv1beta1.AllocateRequest{
 		ContainerRequests: []*kubeletdevicepluginv1beta1.ContainerAllocateRequest{
